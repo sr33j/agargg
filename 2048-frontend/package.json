@@ -1,0 +1,47 @@
+{
+  "name": "agar-game-frontend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "start": "node backend/index.js",
+    "check:game": "node --env-file=.env -e \"process.env.WALLET=process.env.WALLET||'0xcDAaa210041f9Cd78ebF8EAfA86A7B7C0Aa1D9C2';process.env.GAME=process.env.GAME||'0x4b46ca98ecf45e1819a661F9616E2baF7d983b30';process.env.RPC=process.env.RPC||'https://testnet-rpc.monad.xyz';\" && node --loader ts-node/esm src/utils/checkGameStatus.ts"
+  },
+  "dependencies": {
+    "@privy-io/react-auth": "^1.46.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "ethers": "^6.9.0",
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "socket.io": "^4.7.2",
+    "socket.io-client": "^4.8.1",
+    "viem": "^2.7.15"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.13",
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.5.0",
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitejs/plugin-react-swc": "^3.3.2",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^8.45.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.2",
+    "vite": "^7.1.5"
+  },
+  "overrides": {
+    "@coinbase/wallet-sdk": ">=4.3.0"
+  }
+}

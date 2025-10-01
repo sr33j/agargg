@@ -1,0 +1,106 @@
+[
+  {
+    "type": "function",
+    "name": "createGame",
+    "inputs": [
+      {
+        "name": "_boardCoverageFactor",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_velocityMin",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_velocityMax",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_boardHeight",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_boardWidth",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_maxNumPlayers",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_minMonAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_moveFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_paymaster",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "games",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAllGames",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "GameCreated",
+    "inputs": [
+      {
+        "name": "gameAddress",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  }
+]
