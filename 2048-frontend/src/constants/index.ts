@@ -1,9 +1,10 @@
 // Smart contract address
 export const AGAR_GAME_ADDRESS = "0x52599D9b45f876a70241905bf9F17bc060B51aFb";
 export const AGAR_FACTORY_ADDRESS = "0x3b6D975Bbd153D78581b0e28F27F4EEdBf1393bB";
-// Game board dimensions (UI)
-export const BOARD_WIDTH = 800;
-export const BOARD_HEIGHT = 800;
+// Game board dimensions (UI) - These are now used as defaults/fallbacks
+// Actual canvas size is determined dynamically based on viewport
+export const DEFAULT_BOARD_WIDTH = 800;
+export const DEFAULT_BOARD_HEIGHT = 800;
 
 // Token configuration
 export const MON_DECIMALS = 18; // MON token decimals

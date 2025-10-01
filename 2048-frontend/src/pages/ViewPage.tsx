@@ -132,51 +132,49 @@ export function ViewPage({ onBackToGame }: ViewPageProps) {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex flex-col h-screen bg-gray-100">
       <BlockNumberDisplay />
 
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-white shadow-sm p-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">Spectator Mode</h1>
-            <span className={`px-3 py-1 rounded text-sm ${isConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-              {isConnected ? 'Connected' : 'Disconnected'}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-600">
-              Players: <span className="font-semibold">{allPlayers.length}</span>
-            </div>
-
-            <button
-              onClick={onBackToGame}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-            >
-              Back to Game
-            </button>
-          </div>
+      {/* Header - Responsive layout */}
+      <div className="bg-white shadow-sm p-2 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
+          <h1 className="text-lg sm:text-2xl font-bold">Spectator Mode</h1>
+          <span className={`px-2 sm:px-3 py-1 rounded text-xs sm:text-sm ${isConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+            {isConnected ? 'Connected' : 'Disconnected'}
+          </span>
         </div>
 
-        {/* Game Canvas */}
-        <div className="flex-1 flex items-center justify-center p-8">
-          {allPlayers.length > 0 ? (
-            <GameCanvas
-              allPlayers={allPlayers}
-              currentPlayerAddress=""
-              optimisticPosition={null}
-              queuedMoves={[]}
-              contractBoardWidth={contractBoardWidth}
-              contractBoardHeight={contractBoardHeight}
-            />
-          ) : (
-            <div className="text-center">
-              <div className="text-2xl text-gray-400 mb-2">No players in game</div>
-              <div className="text-sm text-gray-500">Waiting for players to join...</div>
-            </div>
-          )}
+        <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="text-xs sm:text-sm text-gray-600">
+            Players: <span className="font-semibold">{allPlayers.length}</span>
+          </div>
+
+          <button
+            onClick={onBackToGame}
+            className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Back to Game
+          </button>
         </div>
+      </div>
+
+      {/* Game Canvas - Responsive container */}
+      <div className="flex-1 flex items-center justify-center p-2 sm:p-4 lg:p-8 min-h-0">
+        {allPlayers.length > 0 ? (
+          <GameCanvas
+            allPlayers={allPlayers}
+            currentPlayerAddress=""
+            optimisticPosition={null}
+            queuedMoves={[]}
+            contractBoardWidth={contractBoardWidth}
+            contractBoardHeight={contractBoardHeight}
+          />
+        ) : (
+          <div className="text-center p-4">
+            <div className="text-xl sm:text-2xl text-gray-400 mb-2">No players in game</div>
+            <div className="text-xs sm:text-sm text-gray-500">Waiting for players to join...</div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -48,19 +48,6 @@ Agar.gg is a real-time multiplayer game where players control cells in a competi
 
 ## Development
 
-### Smart Contracts
-
-Built with [Foundry](https://book.getfoundry.sh/):
-
-```bash
-cd 2048-contracts
-forge install        # Install dependencies
-forge build         # Compile contracts
-forge test          # Run tests
-```
-
-See [`2048-contracts/README.md`](2048-contracts/README.md) for deployment details.
-
 ### Frontend
 
 Built with React, Vite, and Privy:

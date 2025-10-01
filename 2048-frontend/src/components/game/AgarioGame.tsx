@@ -310,8 +310,9 @@ export function AgarioGame({
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <div className="flex-1 flex items-center justify-center p-8">
+    <div className="flex flex-col lg:flex-row h-screen bg-gray-100">
+      {/* Game Canvas - Takes full width on mobile, flex-1 on desktop */}
+      <div className="flex-1 flex items-center justify-center p-2 sm:p-4 lg:p-8 min-h-0">
         <GameCanvas
           allPlayers={allPlayers}
           currentPlayerAddress={currentPlayerAddress}
@@ -322,7 +323,8 @@ export function AgarioGame({
         />
       </div>
 
-      <div className="w-80 p-4 space-y-4">
+      {/* Controls Sidebar - Full width on mobile, fixed width on desktop */}
+      <div className="w-full lg:w-80 p-2 sm:p-4 space-y-2 sm:space-y-4 bg-white lg:bg-transparent shadow-lg lg:shadow-none overflow-y-auto">
         <GameControls
           onLeave={handleLeaveGame}
           onRedeposit={() => setShowRedepositModal(true)}
@@ -333,7 +335,6 @@ export function AgarioGame({
           progress={progress}
           userAddress={userAddress}
         />
-
       </div>
 
       {showRedepositModal && (

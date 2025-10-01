@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { getRadius } from '../../../utils/game';
-import { BOARD_WIDTH, BOARD_HEIGHT, PLAYER_COLORS } from '../../../constants';
+import { DEFAULT_BOARD_WIDTH, DEFAULT_BOARD_HEIGHT, PLAYER_COLORS } from '../../../constants';
 import { PlayerState } from '../../../types';
 
 interface CanvasRendererParams {
@@ -10,6 +10,8 @@ interface CanvasRendererParams {
   queuedMoves: Array<{ predictedPosition: { x: number; y: number } }>;
   contractBoardWidth: number;
   contractBoardHeight: number;
+  canvasWidth: number;
+  canvasHeight: number;
 }
 
 export function useCanvasRenderer({
@@ -18,14 +20,16 @@ export function useCanvasRenderer({
   optimisticPosition,
   queuedMoves,
   contractBoardWidth,
-  contractBoardHeight
+  contractBoardHeight,
+  canvasWidth,
+  canvasHeight
 }: CanvasRendererParams) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
 
-  // Calculate scale factors
-  const scaleX = BOARD_WIDTH / contractBoardWidth;
-  const scaleY = BOARD_HEIGHT / contractBoardHeight;
+  // Calculate scale factors using dynamic canvas dimensions
+  const scaleX = canvasWidth / contractBoardWidth;
+  const scaleY = canvasHeight / contractBoardHeight;
   const scaleR = (scaleX + scaleY) / 2;
 
   const drawPlayer = useCallback((
@@ -82,24 +86,24 @@ export function useCanvasRenderer({
     if (!ctx) return;
 
     // Clear canvas
-    ctx.clearRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
     // Draw background grid
     ctx.strokeStyle = '#e0e0e0';
     ctx.lineWidth = 1;
     const gridSize = 50;
 
-    for (let x = 0; x <= BOARD_WIDTH; x += gridSize) {
+    for (let x = 0; x <= canvasWidth; x += gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, BOARD_HEIGHT);
+      ctx.lineTo(x, canvasHeight);
       ctx.stroke();
     }
 
-    for (let y = 0; y <= BOARD_HEIGHT; y += gridSize) {
+    for (let y = 0; y <= canvasHeight; y += gridSize) {
       ctx.beginPath();
       ctx.moveTo(0, y);
-      ctx.lineTo(BOARD_WIDTH, y);
+      ctx.lineTo(canvasWidth, y);
       ctx.stroke();
     }
 
@@ -132,9 +136,9 @@ export function useCanvasRenderer({
     // Draw border
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 2;
-    ctx.strokeRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+    ctx.strokeRect(0, 0, canvasWidth, canvasHeight);
 
-  }, [allPlayers, currentPlayerAddress, optimisticPosition, queuedMoves, drawPlayer]);
+  }, [allPlayers, currentPlayerAddress, optimisticPosition, queuedMoves, drawPlayer, canvasWidth, canvasHeight]);
 
   // Debug: Log when canvas re-renders due to player changes
   useEffect(() => {
