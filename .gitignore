@@ -221,3 +221,5 @@ run-latest.json
 CLAUDE.md
 **/CLAUDE.md
 REFACTORING*.md
+
+2048-frontend/backend/scripts/*
