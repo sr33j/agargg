@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { publicClient } from '../../utils/client';
 import AgarGameAbi from '../../contracts/abi/AgarGame.json';
-import { AGAR_GAME_ADDRESS } from '../../constants';
+import { 
+  AGAR_GAME_ADDRESS,
+  MAX_PENDING_MOVES,
+  MOVE_THROTTLE_MS
+} from '../../constants';
 import { useBlockchain } from '../../hooks/useBlockchain';
 import { useTransactionManager } from '../../hooks/useTransactionManager';
 import { AgarioGameProps, Direction } from '../../types';
@@ -17,6 +21,7 @@ import { RedepositModal } from '../RedepositModal';
 // Hooks
 import { useKeyboardControls } from './hooks/useKeyboardControls';
 import { useOptimisticState } from './state/OptimisticState';
+import { useBalance } from '../../hooks/useBalance';
 
 interface ExtendedAgarioGameProps extends AgarioGameProps {
   onLeaveComplete?: () => void;
@@ -39,7 +44,6 @@ export function AgarioGame({
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showRedepositModal, setShowRedepositModal] = useState(false);
-  const [walletBalance, setWalletBalance] = useState<bigint>(0n);
 
   // Contract parameters
   const [moveFee, setMoveFee] = useState<bigint>(0n);
@@ -53,6 +57,9 @@ export function AgarioGame({
 
   // Use transaction manager for nonce management
   const { getNonce, incrementNonce, resetNonce, isInitialized: nonceInitialized } = useTransactionManager(userAddress);
+
+  // Use shared balance hook
+  const { balance: walletBalance } = useBalance(userAddress);
 
   // Get current player
   const currentPlayerAddress = userAddress.toLowerCase();
@@ -146,24 +153,6 @@ export function AgarioGame({
     fetchContractParams();
   }, []);
 
-  // Fetch wallet balance
-  useEffect(() => {
-    const fetchBalance = async () => {
-      try {
-        const balance = await publicClient.getBalance({
-          address: userAddress as `0x${string}`
-        });
-        setWalletBalance(balance);
-      } catch (error) {
-        console.error('Error fetching wallet balance:', error);
-      }
-    };
-
-    fetchBalance();
-    const interval = setInterval(fetchBalance, 5000);
-    return () => clearInterval(interval);
-  }, [userAddress]);
-
   // Handle move with non-blocking fire-and-forget pattern
   const handleMove = useCallback((direction: Direction) => {
     // Check basic validity
@@ -174,6 +163,15 @@ export function AgarioGame({
 
     if (!nonceInitialized) {
       console.warn('Nonce not initialized yet');
+      return;
+    }
+
+    // Limit pending transactions to prevent spam
+    const pendingMoveCount = pendingTransactions.filter(tx => tx.action === 'move').length;
+    if (pendingMoveCount >= MAX_PENDING_MOVES) {
+      console.warn(`⏸️ Too many pending moves (${pendingMoveCount}/${MAX_PENDING_MOVES}). Wait for confirmation.`);
+      setError(`Too many pending moves (${pendingMoveCount}). Wait for confirmation.`);
+      setTimeout(() => setError(null), 2000);
       return;
     }
 
@@ -230,7 +228,8 @@ export function AgarioGame({
     trackTransaction,
     getNonce,
     incrementNonce,
-    nonceInitialized
+    nonceInitialized,
+    pendingTransactions
   ]);
 
   // Handle leave game
@@ -284,12 +283,13 @@ export function AgarioGame({
     }
   }, [userAddress, privyProvider]);
 
-  // Use keyboard controls
+  // Use keyboard controls with throttling
   useKeyboardControls({
     onMove: handleMove,
     onLeave: handleLeaveGame,
     onRedeposit: () => setShowRedepositModal(true),
-    enabled: !withdrawing && !showRedepositModal
+    enabled: !withdrawing && !showRedepositModal,
+    moveThrottleMs: MOVE_THROTTLE_MS
   });
 
   // Don't automatically clear on every position update

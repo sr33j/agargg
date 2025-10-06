@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { publicClient } from '../utils/client';
 import { PendingTransaction, UseBlockchainReturn, Direction } from '../types';
-import { TRANSACTION_DEADLINE_BLOCKS } from '../constants';
+import { TRANSACTION_DEADLINE_BLOCKS, BLOCK_POLL_INTERVAL } from '../constants';
 import { WEBSOCKET_URL } from '../config/urls';
 
 export function useBlockchain(): UseBlockchainReturn {
@@ -81,7 +81,7 @@ export function useBlockchain(): UseBlockchainReturn {
     };
     
     fetchBlockNumber();
-    const interval = setInterval(fetchBlockNumber, 2000); // Poll every 2 seconds as fallback
+    const interval = setInterval(fetchBlockNumber, BLOCK_POLL_INTERVAL); // Use constant (5s instead of 2s)
     return () => clearInterval(interval);
   }, [isConnected]);
 

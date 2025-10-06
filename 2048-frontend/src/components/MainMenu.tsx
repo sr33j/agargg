@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLogout } from "@privy-io/react-auth";
-import { publicClient } from "../utils/client";
 import { BalanceDisplay } from "./BalanceDisplay";
 import { DepositModal } from "./DepositModal";
 import { WithdrawModal } from "./WithdrawModal";
 import { JoinGameForm } from "./JoinGameForm";
+import { useBalance } from "../hooks/useBalance";
 
 interface MainMenuProps {
   userAddress: string;
@@ -32,30 +32,9 @@ export function MainMenu({
   const { logout } = useLogout();
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [privyBalance, setPrivyBalance] = useState<bigint>(0n);
-
-  useEffect(() => {
-    const fetchBalance = async () => {
-      // Guard against empty address
-      if (!userAddress) {
-        console.log('⚠️ Skipping balance fetch - no user address yet');
-        return;
-      }
-
-      try {
-        const bal = await publicClient.getBalance({
-          address: userAddress as `0x${string}`
-        });
-        setPrivyBalance(bal);
-      } catch (error) {
-        console.error("Error fetching balance:", error);
-      }
-    };
-
-    fetchBalance();
-    const interval = setInterval(fetchBalance, 5000);
-    return () => clearInterval(interval);
-  }, [userAddress]);
+  
+  // Use shared balance hook instead of local polling
+  const { balance: privyBalance } = useBalance(userAddress);
 
   const abbreviatedAddress = userAddress
     ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`

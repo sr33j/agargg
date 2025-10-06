@@ -9,17 +9,23 @@ export const DEFAULT_BOARD_HEIGHT = 800;
 // Token configuration
 export const MON_DECIMALS = 18; // MON token decimals
 
-// Game configuration
-export const GAME_STATE_REFRESH_INTERVAL = 500; // .5 seconds
+// Game configuration - OPTIMIZED POLLING FREQUENCIES
+export const GAME_STATE_REFRESH_INTERVAL = 5000; // 5 seconds (was 500ms - 10x reduction!)
+export const BALANCE_REFRESH_INTERVAL = 10000; // 10 seconds for balance updates
 export const MAX_POSITION_ATTEMPTS = 20;
 export const FUND_TRANSFER_TIMEOUT_ATTEMPTS = 30;
 export const FUND_TRANSFER_RETRY_DELAY = 2000; // 2 seconds
+
+// Movement throttling
+export const MOVE_THROTTLE_MS = 800; // Minimum 800ms between move transactions
+export const MAX_PENDING_MOVES = 10; // Maximum pending move transactions before blocking new ones
 
 // Blockchain configuration
 export const TRANSACTION_DEADLINE_BLOCKS = 20; // T+20 blocks for move transaction deadline
 export const NON_URGENT_TRANSACTION_DEADLINE_BLOCKS = 100; // T+100 blocks for enter/leave/redeposit
 export const WEBSOCKET_RECONNECT_DELAY = 5000; // 5 seconds
 export const WEBSOCKET_HEARTBEAT_INTERVAL = 30000; // 30 seconds
+export const BLOCK_POLL_INTERVAL = 5000; // 5 seconds for block number fallback (was 2s)
 
 // UI configuration
 export const PLAYER_COLORS = {
