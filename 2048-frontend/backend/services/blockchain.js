@@ -20,6 +20,9 @@ class BlockchainConnection {
     this.eventCleanup = null;  // Store cleanup function for event listeners
     this.isInitializing = false;  // Prevent concurrent initialization
     this.retryTimeout = null;  // Store retry timeout reference
+    this.lastBlockTime = null;  // Track last block received
+    this.blockTimeoutCheck = null;  // Interval to check for stale blocks
+    this.errorHandlersAttached = false;  // Track if error handlers are attached
   }
 
   async initialize() {
@@ -36,6 +39,9 @@ class BlockchainConnection {
 
       // Create WebSocket provider
       this.wsProvider = new ethers.WebSocketProvider(config.alchemyWsUrl);
+
+      // Add error handlers BEFORE waiting for ready
+      this.attachErrorHandlers();
 
       // Wait for provider to be ready
       await this.wsProvider._waitUntilReady();
@@ -63,13 +69,17 @@ class BlockchainConnection {
       // Get initial block number
       const currentBlockNumber = await this.wsProvider.getBlockNumber();
       transactionTracker.updateBlockNumber(currentBlockNumber);
+      this.lastBlockTime = Date.now();
       console.log(`🔗 Initial block number: ${currentBlockNumber}`);
 
       // Fetch initial game state
       await this.syncGameState();
 
       // Set up event listeners and store cleanup function
-      this.eventCleanup = setupEventListeners(this.contract, this.wsProvider, this.io, this.moveFee);
+      this.eventCleanup = setupEventListeners(this.contract, this.wsProvider, this.io, this.moveFee, this);
+
+      // Start block timeout monitoring (check every 15 seconds if we're still receiving blocks)
+      this.startBlockTimeoutMonitor();
 
       this.isConnected = true;
       this.isInitializing = false;
@@ -94,6 +104,70 @@ class BlockchainConnection {
       console.log('🔄 Retrying connection in 5 seconds...');
       this.retryTimeout = setTimeout(() => this.initialize(), config.reconnectDelay);
     }
+  }
+
+  attachErrorHandlers() {
+    if (!this.wsProvider || this.errorHandlersAttached) return;
+
+    // Handle provider-level errors
+    this.wsProvider.on('error', (error) => {
+      console.error('❌ WebSocket provider error:', error.message || error);
+      this.handleConnectionFailure();
+    });
+
+    // Handle WebSocket connection close events
+    if (this.wsProvider.websocket) {
+      this.wsProvider.websocket.on('close', (code, reason) => {
+        console.error(`❌ WebSocket closed: code=${code}, reason=${reason || 'no reason provided'}`);
+        this.handleConnectionFailure();
+      });
+
+      this.wsProvider.websocket.on('error', (error) => {
+        console.error('❌ WebSocket connection error:', error.message || error);
+      });
+    }
+
+    this.errorHandlersAttached = true;
+    console.log('✅ WebSocket error handlers attached');
+  }
+
+  startBlockTimeoutMonitor() {
+    // Clear any existing monitor
+    if (this.blockTimeoutCheck) {
+      clearInterval(this.blockTimeoutCheck);
+    }
+
+    // Check every 15 seconds if we've received a block recently
+    this.blockTimeoutCheck = setInterval(() => {
+      if (!this.lastBlockTime || !this.isConnected) return;
+
+      const timeSinceLastBlock = Date.now() - this.lastBlockTime;
+      const BLOCK_TIMEOUT = 30000; // 30 seconds without a block is concerning
+
+      if (timeSinceLastBlock > BLOCK_TIMEOUT) {
+        console.error(`❌ No blocks received for ${Math.floor(timeSinceLastBlock / 1000)}s - reconnecting...`);
+        this.handleConnectionFailure();
+      }
+    }, 15000);
+
+    console.log('✅ Block timeout monitor started');
+  }
+
+  handleConnectionFailure() {
+    if (!this.isConnected) return; // Already handling failure
+
+    console.log('🔄 Handling connection failure...');
+    this.isConnected = false;
+    this.io.emit('connection-status', { connected: false });
+
+    // Clean up and reconnect
+    this.cleanup();
+    this.retryTimeout = setTimeout(() => this.initialize(), config.reconnectDelay);
+  }
+
+  // Call this from blockEvent.js when a block is received
+  updateLastBlockTime() {
+    this.lastBlockTime = Date.now();
   }
 
   async syncGameState(retries = config.syncRetries) {
@@ -156,6 +230,12 @@ class BlockchainConnection {
   }
 
   cleanup() {
+    // Clear block timeout monitor
+    if (this.blockTimeoutCheck) {
+      clearInterval(this.blockTimeoutCheck);
+      this.blockTimeoutCheck = null;
+    }
+
     // Clear any pending retry timeout
     if (this.retryTimeout) {
       clearTimeout(this.retryTimeout);
@@ -184,6 +264,8 @@ class BlockchainConnection {
 
     this.contract = null;
     this.isInitializing = false;
+    this.lastBlockTime = null;
+    this.errorHandlersAttached = false;
   }
 
   getConnectionStatus() {

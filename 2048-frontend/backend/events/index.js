@@ -5,7 +5,7 @@ import setupRedepositEventListener from './redepositEvent.js';
 import setupCollisionEventListener from './collisionEvent.js';
 import setupBlockEventListener from './blockEvent.js';
 
-export function setupEventListeners(contract, wsProvider, io, moveFee) {
+export function setupEventListeners(contract, wsProvider, io, moveFee, blockchainConnection) {
   console.log('📡 Setting up event listeners...');
 
   const cleanupFunctions = [];
@@ -17,8 +17,8 @@ export function setupEventListeners(contract, wsProvider, io, moveFee) {
   cleanupFunctions.push(setupRedepositEventListener(contract, io));
   cleanupFunctions.push(setupCollisionEventListener(contract, io));
 
-  // Block event listener
-  cleanupFunctions.push(setupBlockEventListener(wsProvider, io));
+  // Block event listener - pass blockchainConnection reference for timeout monitoring
+  cleanupFunctions.push(setupBlockEventListener(wsProvider, io, blockchainConnection));
 
   console.log('✅ Event listeners configured');
 

@@ -17,6 +17,10 @@ export function useBlockchain(): UseBlockchainReturn {
   useEffect(() => {
     const socket = io(WEBSOCKET_URL, {
       transports: ['websocket'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity,
     });
     
     socketRef.current = socket;
@@ -26,8 +30,29 @@ export function useBlockchain(): UseBlockchainReturn {
       setIsConnected(true);
     });
     
-    socket.on('disconnect', () => {
-      console.log('❌ Disconnected from blockchain WebSocket');
+    socket.on('disconnect', (reason) => {
+      console.log('❌ Disconnected from blockchain WebSocket, reason:', reason);
+      setIsConnected(false);
+    });
+
+    // Handle connection errors
+    socket.on('connect_error', (error) => {
+      console.error('❌ Blockchain WebSocket connection error:', error.message);
+      setIsConnected(false);
+    });
+
+    // Handle reconnection attempts
+    socket.on('reconnect_attempt', (attemptNumber) => {
+      console.log(`🔄 Reconnecting to blockchain WebSocket (attempt ${attemptNumber})...`);
+    });
+
+    socket.on('reconnect', (attemptNumber) => {
+      console.log(`✅ Reconnected to blockchain WebSocket after ${attemptNumber} attempts`);
+      setIsConnected(true);
+    });
+
+    socket.on('reconnect_failed', () => {
+      console.error('❌ Failed to reconnect to blockchain WebSocket after all attempts');
       setIsConnected(false);
     });
     

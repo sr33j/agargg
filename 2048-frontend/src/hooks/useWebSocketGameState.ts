@@ -179,8 +179,9 @@ export function useWebSocketGameState(userAddress: string): UseGameStateReturn {
     }
 
     const socket = io(WEBSOCKET_URL, {
-      reconnection: false, // We'll handle reconnection manually
+      reconnection: false, // We'll handle reconnection manually for better control
       transports: ['websocket'],
+      timeout: 20000,
     });
 
     socketRef.current = socket;
@@ -202,8 +203,8 @@ export function useWebSocketGameState(userAddress: string): UseGameStateReturn {
       }, WEBSOCKET_HEARTBEAT_INTERVAL);
     });
 
-    socket.on('disconnect', () => {
-      console.log('❌ WebSocket disconnected');
+    socket.on('disconnect', (reason) => {
+      console.log('❌ WebSocket disconnected, reason:', reason);
       isConnectedRef.current = false;  // Mark as disconnected
       startPolling(); // Fall back to polling
 
@@ -215,12 +216,18 @@ export function useWebSocketGameState(userAddress: string): UseGameStateReturn {
 
       // Schedule reconnection
       if (!reconnectTimeoutRef.current) {
+        console.log(`🔄 Scheduling reconnection in ${WEBSOCKET_RECONNECT_DELAY}ms...`);
         reconnectTimeoutRef.current = window.setTimeout(() => {
           reconnectTimeoutRef.current = null;
           isConnectedRef.current = false;  // Ensure flag is cleared before reconnect
           connectWebSocket();
         }, WEBSOCKET_RECONNECT_DELAY);
       }
+    });
+
+    // Handle WebSocket errors
+    socket.on('error', (error) => {
+      console.error('❌ WebSocket error:', error);
     });
 
     socket.on('connection-status', (data: { connected: boolean }) => {

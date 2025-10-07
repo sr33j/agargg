@@ -1,8 +1,14 @@
 import transactionTracker from '../state/transactionTracker.js';
 
-export function setupBlockEventListener(wsProvider, io) {
+export function setupBlockEventListener(wsProvider, io, blockchainConnection) {
   const handleBlock = async (blockNumber) => {
     console.log(`📦 New block: ${blockNumber}`);
+    
+    // Update last block time in blockchain connection to prevent false timeout detections
+    if (blockchainConnection) {
+      blockchainConnection.updateLastBlockTime();
+    }
+    
     transactionTracker.updateBlockNumber(blockNumber);
 
     // Broadcast block update to all clients
@@ -45,9 +51,17 @@ export function setupBlockEventListener(wsProvider, io) {
 
   wsProvider.on('block', handleBlock);
 
+  // Add error handler for WebSocket errors during block listening
+  const handleError = (error) => {
+    console.error('❌ Block event listener error:', error.message || error);
+  };
+
+  wsProvider.on('error', handleError);
+
   // Return cleanup function
   return () => {
     wsProvider.off('block', handleBlock);
+    wsProvider.off('error', handleError);
   };
 }
 
