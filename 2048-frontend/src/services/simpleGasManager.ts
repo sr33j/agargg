@@ -29,8 +29,8 @@ export class SimpleGasManager {
   private readonly PRIORITY_FEES = {
     [GasUrgency.ECONOMY]: parseGwei('0.5'),
     [GasUrgency.STANDARD]: parseGwei('1'),
-    [GasUrgency.FAST]: parseGwei('3'),
-    [GasUrgency.CRITICAL]: parseGwei('5')
+    [GasUrgency.FAST]: parseGwei('5'),
+    [GasUrgency.CRITICAL]: parseGwei('10')
   };
 
   // Buffer percentages for gas limits
