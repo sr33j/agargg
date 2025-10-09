@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { publicClient } from '../../utils/client';
 import AgarGameAbi from '../../contracts/abi/AgarGame.json';
 import { 
   AGAR_GAME_ADDRESS,
   MAX_PENDING_MOVES,
-  MOVE_THROTTLE_MS
+  DEFAULT_MOVE_PRIORITY_FEE_GWEI
 } from '../../constants';
 import { useBlockchain } from '../../hooks/useBlockchain';
 import { useTransactionManager } from '../../hooks/useTransactionManager';
@@ -44,6 +44,7 @@ export function AgarioGame({
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showRedepositModal, setShowRedepositModal] = useState(false);
+  const [movePriorityFeeGwei, setMovePriorityFeeGwei] = useState(DEFAULT_MOVE_PRIORITY_FEE_GWEI);
 
   // Contract parameters
   const [moveFee, setMoveFee] = useState<bigint>(0n);
@@ -53,10 +54,10 @@ export function AgarioGame({
   const [velocityMax, setVelocityMax] = useState<number>(500);
 
   // Use blockchain hook
-  const { currentBlockNumber, trackTransaction, pendingTransactions } = useBlockchain();
+  const { trackTransaction, pendingTransactions } = useBlockchain();
 
   // Use transaction manager for nonce management
-  const { getNonce, incrementNonce, resetNonce, isInitialized: nonceInitialized } = useTransactionManager(userAddress);
+  const { getNonce, incrementNonce, isInitialized: nonceInitialized } = useTransactionManager(userAddress);
 
   // Use shared balance hook
   const { balance: walletBalance } = useBalance(userAddress);
@@ -199,7 +200,8 @@ export function AgarioGame({
       direction,
       privyProvider,
       deadlineBlocks: 10,
-      nonce
+      nonce,
+      priorityFeeGwei: movePriorityFeeGwei
     })
       .then((result) => {
         // Transaction sent successfully
@@ -229,7 +231,8 @@ export function AgarioGame({
     getNonce,
     incrementNonce,
     nonceInitialized,
-    pendingTransactions
+    pendingTransactions,
+    movePriorityFeeGwei
   ]);
 
   // Handle leave game
@@ -283,13 +286,12 @@ export function AgarioGame({
     }
   }, [userAddress, privyProvider]);
 
-  // Use keyboard controls with throttling
+  // Use keyboard controls
   useKeyboardControls({
     onMove: handleMove,
     onLeave: handleLeaveGame,
     onRedeposit: () => setShowRedepositModal(true),
-    enabled: !withdrawing && !showRedepositModal,
-    moveThrottleMs: MOVE_THROTTLE_MS
+    enabled: !withdrawing && !showRedepositModal
   });
 
   // Don't automatically clear on every position update
@@ -334,6 +336,8 @@ export function AgarioGame({
           error={error}
           progress={progress}
           userAddress={userAddress}
+          movePriorityFeeGwei={movePriorityFeeGwei}
+          setMovePriorityFeeGwei={setMovePriorityFeeGwei}
         />
       </div>
 

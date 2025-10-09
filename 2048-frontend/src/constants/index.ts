@@ -27,6 +27,11 @@ export const WEBSOCKET_RECONNECT_DELAY = 5000; // 5 seconds
 export const WEBSOCKET_HEARTBEAT_INTERVAL = 30000; // 30 seconds
 export const BLOCK_POLL_INTERVAL = 5000; // 5 seconds for block number fallback (was 2s)
 
+// Gas configuration for moves
+export const DEFAULT_MOVE_PRIORITY_FEE_GWEI = 5;
+export const MIN_MOVE_PRIORITY_FEE_GWEI = 1;
+export const MAX_MOVE_PRIORITY_FEE_GWEI = 10;
+
 // UI configuration
 export const PLAYER_COLORS = {
   CURRENT_PLAYER: '#6cf',

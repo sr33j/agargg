@@ -110,6 +110,71 @@ export class SimpleGasManager {
   }
 
   /**
+   * Get gas parameters with custom priority fee (for user-controlled gas)
+   */
+  public async getGasParamsWithCustomPriority(
+    txData: any,
+    priorityFeeGwei: number,
+    useCache: boolean = true
+  ): Promise<GasEstimate> {
+    const cacheKey = `${txData.address}-${txData.functionName}-custom-${priorityFeeGwei}`;
+
+    // Check cache first
+    if (useCache) {
+      const cached = this.estimateCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+        console.log('📊 Using cached gas estimate (custom priority)');
+        return cached.estimate;
+      }
+    }
+
+    try {
+      // Estimate gas for the transaction
+      const estimatedGas = await this.estimateGasLimit(txData);
+
+      // Use FAST buffer for custom priority transactions (30% buffer)
+      const buffer = this.GAS_BUFFER[GasUrgency.FAST];
+      const gasLimit = BigInt(Math.ceil(Number(estimatedGas) * buffer));
+
+      // Convert gwei to wei
+      const maxPriorityFeePerGas = parseGwei(priorityFeeGwei.toString());
+
+      // Calculate max fee (base + priority with safety margin)
+      const maxFeePerGas = this.MONAD_BASE_FEE + (maxPriorityFeePerGas * 2n);
+
+      const estimate: GasEstimate = {
+        gasLimit,
+        maxPriorityFeePerGas,
+        maxFeePerGas
+      };
+
+      // Cache the estimate
+      this.estimateCache.set(cacheKey, {
+        estimate,
+        timestamp: Date.now()
+      });
+
+      console.log(`⛽ Gas estimate with custom priority (${priorityFeeGwei} gwei):`, {
+        gasLimit: gasLimit.toString(),
+        priorityFee: `${priorityFeeGwei} gwei`,
+        maxFee: `${Number(maxFeePerGas) / 1e9} gwei`,
+        estimatedCost: `${Number(gasLimit * (this.MONAD_BASE_FEE + maxPriorityFeePerGas)) / 1e18} MON`
+      });
+
+      return estimate;
+    } catch (error) {
+      console.warn('Failed to estimate gas, using fallback values:', error);
+      // Return fallback with custom priority fee
+      const maxPriorityFeePerGas = parseGwei(priorityFeeGwei.toString());
+      return {
+        gasLimit: 100000n,
+        maxPriorityFeePerGas,
+        maxFeePerGas: this.MONAD_BASE_FEE + (maxPriorityFeePerGas * 2n)
+      };
+    }
+  }
+
+  /**
    * Estimate gas limit for a transaction
    */
   private async estimateGasLimit(txData: any): Promise<bigint> {

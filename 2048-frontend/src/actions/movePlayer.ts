@@ -1,10 +1,9 @@
-import { parseUnits } from 'viem';
 import { publicClient, getWalletClient } from '../utils/client';
 import AgarGameAbi from '../contracts/abi/AgarGame.json';
-import { AGAR_GAME_ADDRESS } from '../constants';
+import { AGAR_GAME_ADDRESS, DEFAULT_MOVE_PRIORITY_FEE_GWEI } from '../constants';
 import { Direction } from '../types';
 import { getTransactionDeadline } from './utils/transactionHelper';
-import { gasManager, GasUrgency } from '../services/simpleGasManager';
+import { gasManager } from '../services/simpleGasManager';
 
 export interface MovePlayerParams {
   userAddress: string;
@@ -12,6 +11,7 @@ export interface MovePlayerParams {
   privyProvider: any;
   deadlineBlocks?: number;
   nonce?: bigint;
+  priorityFeeGwei?: number;
 }
 
 export async function movePlayer({
@@ -19,7 +19,8 @@ export async function movePlayer({
   direction,
   privyProvider,
   deadlineBlocks = 10,
-  nonce
+  nonce,
+  priorityFeeGwei
 }: MovePlayerParams) {
   const walletClient = await getWalletClient(privyProvider);
 
@@ -33,7 +34,8 @@ export async function movePlayer({
   console.log(`🎮 Preparing move transaction:`, {
     direction,
     targetBlock: deadline.toString(),
-    nonce: nonce?.toString()
+    nonce: nonce?.toString(),
+    priorityFeeGwei: priorityFeeGwei ?? DEFAULT_MOVE_PRIORITY_FEE_GWEI
   });
 
   // Prepare transaction data for gas estimation
@@ -45,8 +47,9 @@ export async function movePlayer({
     args: [direction, deadline]
   };
 
-  // Get optimized gas parameters
-  const gasParams = await gasManager.getGasParams(baseTxParams, GasUrgency.STANDARD);
+  // Get gas parameters with custom priority fee
+  const finalPriorityFee = priorityFeeGwei ?? DEFAULT_MOVE_PRIORITY_FEE_GWEI;
+  const gasParams = await gasManager.getGasParamsWithCustomPriority(baseTxParams, finalPriorityFee);
 
   // Build final transaction parameters
   const txParams: any = {

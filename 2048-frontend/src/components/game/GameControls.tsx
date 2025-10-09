@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { formatUnits } from 'viem';
-import { MON_DECIMALS } from '../../constants';
+import { 
+  MON_DECIMALS,
+  MIN_MOVE_PRIORITY_FEE_GWEI,
+  MAX_MOVE_PRIORITY_FEE_GWEI 
+} from '../../constants';
 
 interface GameControlsProps {
   onLeave: () => void;
@@ -11,6 +15,8 @@ interface GameControlsProps {
   error: string | null;
   progress: string | null;
   userAddress?: string;
+  movePriorityFeeGwei: number;
+  setMovePriorityFeeGwei: (value: number) => void;
 }
 
 export function GameControls({
@@ -21,7 +27,9 @@ export function GameControls({
   playerMonAmount,
   error,
   progress,
-  userAddress
+  userAddress,
+  movePriorityFeeGwei,
+  setMovePriorityFeeGwei
 }: GameControlsProps) {
   const [copied, setCopied] = useState(false);
   const walletBalanceInMon = Number(formatUnits(walletBalance, MON_DECIMALS));
@@ -39,6 +47,18 @@ export function GameControls({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const getGasLabel = (gwei: number) => {
+    const range = MAX_MOVE_PRIORITY_FEE_GWEI - MIN_MOVE_PRIORITY_FEE_GWEI;
+    const economy = MIN_MOVE_PRIORITY_FEE_GWEI + (range * 0.25);
+    const balanced = MIN_MOVE_PRIORITY_FEE_GWEI + (range * 0.5);
+    const fast = MIN_MOVE_PRIORITY_FEE_GWEI + (range * 0.75);
+    
+    if (gwei <= economy) return 'Economy';
+    if (gwei <= balanced) return 'Balanced';
+    if (gwei <= fast) return 'Fast';
+    return 'Critical';
   };
 
   return (
@@ -85,6 +105,41 @@ export function GameControls({
           ⚠️ Low wallet balance! You may not have enough gas for transactions.
         </div>
       )}
+
+      {/* Gas Priority Slider */}
+      <div className="p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs sm:text-sm font-semibold text-gray-700">
+            Move Gas Priority
+          </span>
+          <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+            {getGasLabel(movePriorityFeeGwei)}
+          </span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            min={MIN_MOVE_PRIORITY_FEE_GWEI}
+            max={MAX_MOVE_PRIORITY_FEE_GWEI}
+            step="0.5"
+            value={movePriorityFeeGwei}
+            onChange={(e) => setMovePriorityFeeGwei(parseFloat(e.target.value))}
+            className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+            disabled={isWithdrawing}
+          />
+        </div>
+        
+        <div className="flex justify-between items-center mt-2 text-xs text-gray-600">
+          <span>{MIN_MOVE_PRIORITY_FEE_GWEI} gwei</span>
+          <span className="font-semibold text-blue-600">{movePriorityFeeGwei} gwei</span>
+          <span>{MAX_MOVE_PRIORITY_FEE_GWEI} gwei</span>
+        </div>
+        
+        <div className="mt-1 text-xs text-gray-500 text-center">
+          Higher gas = More reliable moves
+        </div>
+      </div>
 
       {/* Action Buttons */}
       <div className="flex gap-2">
