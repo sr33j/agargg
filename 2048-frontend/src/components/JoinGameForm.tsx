@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { parseUnits, formatUnits } from "viem";
 import { publicClient, getWalletClient } from "../utils/client";
 import AgarGameAbi from "../contracts/abi/AgarGame.json";
@@ -16,6 +16,7 @@ interface JoinGameFormProps {
   contractBoardWidth: number;
   contractBoardHeight: number;
   onSuccess: (result: JoinGameResult) => void;
+  recommendedGasReserve?: number;
 }
 
 interface JoinGameResult {
@@ -32,7 +33,8 @@ export function JoinGameForm({
   maxMonAmount,
   contractBoardWidth,
   contractBoardHeight,
-  onSuccess
+  onSuccess,
+  recommendedGasReserve = 0.5
 }: JoinGameFormProps) {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,6 +45,13 @@ export function JoinGameForm({
   const minMonDisplay = formatUnits(minMonAmount, MON_DECIMALS);
   const maxMonDisplay = formatUnits(maxMonAmount, MON_DECIMALS);
   const balanceDisplay = formatUnits(privyBalance, MON_DECIMALS);
+  const balanceInMon = parseFloat(balanceDisplay);
+  
+  // Calculate remaining balance after deposit
+  const depositAmount = amount ? parseFloat(amount) : 0;
+  const remainingAfterDeposit = balanceInMon - depositAmount;
+  const hasEnoughForGas = remainingAfterDeposit >= recommendedGasReserve;
+  const isLowOnGas = remainingAfterDeposit >= recommendedGasReserve * 0.5 && remainingAfterDeposit < recommendedGasReserve;
 
   async function handleJoinGame() {
     if (!amount || isNaN(Number(amount))) {
@@ -59,6 +68,12 @@ export function JoinGameForm({
 
     if (joinAmount > privyBalance) {
       setError(`Insufficient balance. You have ${balanceDisplay} MON`);
+      return;
+    }
+    
+    // Warn if gas reserve is too low
+    if (remainingAfterDeposit < recommendedGasReserve * 0.3) {
+      setError(`You need to leave at least ${(recommendedGasReserve * 0.3).toFixed(2)} MON for gas. You'll have ${remainingAfterDeposit.toFixed(4)} MON remaining.`);
       return;
     }
 
@@ -159,14 +174,119 @@ export function JoinGameForm({
       borderRadius: '16px',
       padding: '32px',
       boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-      maxWidth: '400px',
+      maxWidth: '450px',
       width: '100%'
     }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>Join Game</h2>
+      <h2 style={{ 
+        textAlign: 'center', 
+        marginBottom: '8px',
+        color: '#667eea',
+        fontSize: '24px'
+      }}>
+        Enter Game
+      </h2>
+      <p style={{
+        textAlign: 'center',
+        fontSize: '14px',
+        color: '#666',
+        marginBottom: '24px'
+      }}>
+        Deposit from your embedded wallet into the game
+      </p>
+      
+      {/* Balance Overview */}
+      <div style={{
+        background: '#f8f9fa',
+        borderRadius: '8px',
+        padding: '16px',
+        marginBottom: '20px'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '8px'
+        }}>
+          <span style={{ fontSize: '14px', color: '#666' }}>Embedded Wallet:</span>
+          <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#333' }}>
+            {balanceDisplay} MON
+          </span>
+        </div>
+        {depositAmount > 0 && (
+          <>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginTop: '8px',
+              paddingTop: '8px',
+              borderTop: '1px solid #e0e0e0'
+            }}>
+              <span style={{ fontSize: '14px', color: '#666' }}>Game Deposit:</span>
+              <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#667eea' }}>
+                -{depositAmount.toFixed(4)} MON
+              </span>
+            </div>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginTop: '8px',
+              paddingTop: '8px',
+              borderTop: '1px solid #e0e0e0'
+            }}>
+              <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>Remaining for Gas:</span>
+              <span style={{ 
+                fontSize: '18px', 
+                fontWeight: 'bold',
+                color: !hasEnoughForGas ? '#dc3545' : isLowOnGas ? '#ffc107' : '#28a745'
+              }}>
+                {remainingAfterDeposit.toFixed(4)} MON
+              </span>
+            </div>
+            {!hasEnoughForGas && (
+              <div style={{
+                marginTop: '8px',
+                padding: '8px',
+                background: '#fee',
+                borderRadius: '6px',
+                fontSize: '12px',
+                color: '#c00'
+              }}>
+                ⚠️ Need at least {recommendedGasReserve} MON for gas!
+              </div>
+            )}
+            {isLowOnGas && hasEnoughForGas && (
+              <div style={{
+                marginTop: '8px',
+                padding: '8px',
+                background: '#fff3cd',
+                borderRadius: '6px',
+                fontSize: '12px',
+                color: '#856404'
+              }}>
+                ⚠️ Low on gas. Recommended: {recommendedGasReserve} MON
+              </div>
+            )}
+            {hasEnoughForGas && !isLowOnGas && (
+              <div style={{
+                marginTop: '8px',
+                padding: '8px',
+                background: '#d4edda',
+                borderRadius: '6px',
+                fontSize: '12px',
+                color: '#155724'
+              }}>
+                ✓ Good! You have enough for gas
+              </div>
+            )}
+          </>
+        )}
+      </div>
       
       <div style={{ marginBottom: '20px' }}>
-        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-          Enter Amount (MON)
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '14px' }}>
+          Amount to Deposit (MON)
         </label>
         <input
           type="number"
@@ -178,18 +298,26 @@ export function JoinGameForm({
             width: '100%',
             padding: '12px',
             borderRadius: '8px',
-            border: '1px solid #ddd',
-            fontSize: '16px'
+            border: '2px solid #ddd',
+            fontSize: '16px',
+            outline: 'none',
+            transition: 'border-color 0.2s'
           }}
+          onFocus={(e) => e.currentTarget.style.borderColor = '#667eea'}
+          onBlur={(e) => e.currentTarget.style.borderColor = '#ddd'}
           step="0.000000000000000001"
           min={minMonDisplay}
           max={maxJoinableDisplay}
         />
-        <div style={{ marginTop: '8px', fontSize: '14px', color: '#666' }}>
-          Min: {minMonDisplay} MON | Max: {maxJoinableDisplay} MON
-        </div>
-        <div style={{ marginTop: '4px', fontSize: '14px', color: '#666' }}>
-          Your balance: {balanceDisplay} MON
+        <div style={{ 
+          marginTop: '8px', 
+          fontSize: '13px', 
+          color: '#666',
+          display: 'flex',
+          justifyContent: 'space-between'
+        }}>
+          <span>Min: {minMonDisplay} MON</span>
+          <span>Max: {maxJoinableDisplay} MON</span>
         </div>
       </div>
 
@@ -200,7 +328,8 @@ export function JoinGameForm({
           color: '#c00',
           borderRadius: '8px',
           marginBottom: '20px',
-          fontSize: '14px'
+          fontSize: '14px',
+          border: '1px solid #fcc'
         }}>
           {error}
         </div>
@@ -218,15 +347,34 @@ export function JoinGameForm({
           color: 'white',
           cursor: loading || !amount || privyBalance === 0n ? 'not-allowed' : 'pointer',
           fontSize: '18px',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          transition: 'transform 0.2s, background 0.2s'
+        }}
+        onMouseEnter={(e) => {
+          if (!loading && amount && privyBalance > 0n) {
+            e.currentTarget.style.transform = 'scale(1.02)';
+            e.currentTarget.style.background = '#5568d3';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!loading && amount && privyBalance > 0n) {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.background = '#667eea';
+          }
         }}
       >
-        {loading ? 'Joining...' : 'Join Game'}
+        {loading ? 'Entering Game...' : 'Enter Game'}
       </button>
       
       {privyBalance === 0n && (
-        <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '14px', color: '#666' }}>
-          You need to deposit MON first
+        <div style={{ 
+          marginTop: '16px', 
+          textAlign: 'center', 
+          fontSize: '14px', 
+          color: '#dc3545',
+          fontWeight: '500'
+        }}>
+          ⚠️ Deposit MON to your embedded wallet first
         </div>
       )}
     </div>
